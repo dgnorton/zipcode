@@ -19,6 +19,8 @@ type Zip struct {
 	County    string
 	Type      string
 	Distance  float64
+        LatitudeSin float64
+        LatitudeCos float64
 }
 
 // ParseCSV parses a string in the form of...
@@ -111,15 +113,19 @@ func LoadTSVFile(fileName string) ([]*Zip, error) {
 	return loadFile(fileName, ParseTSV)
 }
 
-// Distance calcuLates the distance, in miles, between two (lat,lon) points.
-func Distance(lat1, lon1, lat2, lon2 float64) float64 {
-	theta := lon1 - lon2
-	dist := sin(d2r*lat1)*sin(d2r*lat2) + cos(d2r*lat1)*cos(d2r*lat2)*cos(d2r*theta)
-	dist = math.Acos(dist)
-	dist = r2d * dist
-	dist = dist * 60 * 1.1515
+// Distance calculates the distance between two zip codes.
+func Distance(z1, z2 *Zip) float64 {
+   if z1.Code == z2.Code {
+      return 0.0
+   }
 
-	return dist
+   theta := z1.Longitude - z2.Longitude
+   d := z1.LatitudeSin * z2.LatitudeSin + z1.LatitudeCos * z2.LatitudeCos * cos(d2r*theta)
+   d = math.Acos(d)
+   d = r2d * d
+   d = d * 60 * 1.1515
+
+   return d
 }
 
 // Find takes an integer value for a zip code and returns a pointer to a Zip struct
@@ -142,29 +148,17 @@ func FindInRadius(zipcode int, radius float64, zips []*Zip) []*Zip {
 		return found
 	}
 
-	delta := 0.1
-
-	// if radius is below minimum threshold, skip the
+	// if radius is below threshold distance, skip the
 	// slow math and return zipcode
-	if radius < delta {
+	if radius < 0.1 {
 		found = append(found, z1)
 		return found
 	}
 
-        slat1 := sin(d2r * z1.Latitude)
-        clat1 := cos(d2r * z1.Latitude)
-
 	for _, z2 := range zips {
-                theta := z1.Longitude - z2.Longitude
-                d := slat1 * sin(d2r*z2.Latitude) + clat1 * cos(d2r*z2.Latitude) * cos(d2r*theta)
-                d = math.Acos(d)
-                d = r2d * d
-                d = d * 60 * 1.1515
+                d := Distance(z1, z2)
 
 		if d <= radius {
-			if d < 0.1 {
-				d = 0
-			}
 			z2.Distance = d
 			found = append(found, z2)
 		}
@@ -194,6 +188,10 @@ func loadFile(fileName string, parse parser) ([]*Zip, error) {
 		if err != nil {
 			return nil, err
 		}
+                // pre-calculate a couple values for faster distance calculataions
+                zip.LatitudeSin = sin(d2r * zip.Latitude)
+                zip.LatitudeCos = cos(d2r * zip.Latitude)
+
 		zips = append(zips, zip)
 	}
 	file.Close()

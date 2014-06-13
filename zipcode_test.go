@@ -55,20 +55,34 @@ func TestLoadTSVFile(t *testing.T) {
 }
 
 func TestDistance(t *testing.T) {
+	zips, err := LoadTSVFile("US.txt")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	z1 := Find(28115, zips)
+	if z1 == nil {
+		t.Errorf("Find(28115, zips) = nil want a valid *Zip")
+		return
+	}
+
+	z2 := Find(24450, zips)
+	if z2 == nil {
+		t.Errorf("Find(24450, zips) = nil want a valid *Zip")
+		return
+	}
+
 	delta := 0.01
-	d := Distance(0, 0, 0, 0)
+	d := Distance(z1, z1)
 	if !floatEqual(d, 0.0, delta) {
-		t.Errorf("Distance(0, 0, 0, 0) = %f want 0 +/- %f", d, delta)
+		t.Errorf("Distance(zip, zip) = %f want 0 +/- %f", d, delta)
 	}
 
-	d = Distance(40.922326, -72.637078, 40.922326, -72.637078)
-	if !floatEqual(d, 0.0, delta) {
-		t.Errorf("Distance(40.922326, -72.637078, 40.922326, -72.637078) = %f want 0 +/- %f", d, delta)
-	}
-
-	d = Distance(40.922326, -72.637078, 35.688136, -80.819825)
-	if !floatEqual(d, 571.90, delta) {
-		t.Errorf("Distance(40.922326, -72.637078, 40.922326, -72.637078) = %f want 571.90 +/- %f", d, delta)
+	d = Distance(z1, z2)
+        want := 170.44
+	if !floatEqual(d, want, delta) {
+		t.Errorf("Distance(z1, z2) = %f want %f +/- %f", d, want, delta)
 	}
 }
 
