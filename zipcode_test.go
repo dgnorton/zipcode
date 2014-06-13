@@ -73,7 +73,7 @@ func TestDistance(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	zips, err := LoadCSVFile("zip_codes.csv")
+	zips, err := LoadTSVFile("US.txt")
 	if err != nil {
 		t.Error(err)
 		return
@@ -91,14 +91,14 @@ func TestFind(t *testing.T) {
 }
 
 func TestFindInRadius(t *testing.T) {
-	zips, err := LoadCSVFile("zip_codes.csv")
+	zips, err := LoadTSVFile("US.txt")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	found := FindInRadius(28115, 10, zips)
-	want := 8
+	want := 13
 	if len(found) != want {
 		t.Errorf("FindInRadius(28115, 10, zips) found %d zip codes.  Want %d", len(found), want)
 	}
@@ -114,6 +114,38 @@ func TestFindInRadius(t *testing.T) {
 	if len(found) != want {
 		t.Errorf("FindInRadius(28115, 10, zips) found %d zip codes.  Want %d", len(found), want)
 	}
+
+	found = FindInRadius(28115, 0, zips)
+	want = 1
+	if len(found) != want {
+		t.Errorf("FindInRadius(28115, 0, zips) found %d zip codes.  Want %d", len(found), want)
+	}
+}
+
+func BenchmarkFindInRadius0(b *testing.B)   { benchmarkFindInRadius(0, b) }
+func BenchmarkFindInRadius5(b *testing.B)   { benchmarkFindInRadius(5, b) }
+func BenchmarkFindInRadius10(b *testing.B)  { benchmarkFindInRadius(10, b) }
+func BenchmarkFindInRadius20(b *testing.B)  { benchmarkFindInRadius(20, b) }
+func BenchmarkFindInRadius50(b *testing.B)  { benchmarkFindInRadius(50, b) }
+func BenchmarkFindInRadius100(b *testing.B) { benchmarkFindInRadius(100, b) }
+func BenchmarkFindInRadius500(b *testing.B) { benchmarkFindInRadius(500, b) }
+
+var result []*Zip
+
+func benchmarkFindInRadius(radius float64, b *testing.B) {
+	zips, err := LoadTSVFile("US.txt")
+	if err != nil {
+		b.Error(err)
+		return
+	}
+
+	var r []*Zip
+
+	for n := 0; n < b.N; n++ {
+		r = FindInRadius(28115, radius, zips)
+	}
+
+	result = r
 }
 
 func floatEqual(a, b, delta float64) bool {
