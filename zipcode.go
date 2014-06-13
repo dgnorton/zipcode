@@ -151,8 +151,16 @@ func FindInRadius(zipcode int, radius float64, zips []*Zip) []*Zip {
 		return found
 	}
 
+        slat1 := sin(d2r * z1.Latitude)
+        clat1 := cos(d2r * z1.Latitude)
+
 	for _, z2 := range zips {
-		d := Distance(z1.Latitude, z1.Longitude, z2.Latitude, z2.Longitude)
+                theta := z1.Longitude - z2.Longitude
+                d := slat1 * sin(d2r*z2.Latitude) + clat1 * cos(d2r*z2.Latitude) * cos(d2r*theta)
+                d = math.Acos(d)
+                d = r2d * d
+                d = d * 60 * 1.1515
+
 		if d <= radius {
 			if d < 0.1 {
 				d = 0
