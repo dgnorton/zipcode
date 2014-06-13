@@ -142,6 +142,15 @@ func FindInRadius(zipcode int, radius float64, zips []*Zip) []*Zip {
 		return found
 	}
 
+	delta := 0.1
+
+	// if radius is below minimum threshold, skip the
+	// slow math and return zipcode
+	if radius < delta {
+		found = append(found, z1)
+		return found
+	}
+
 	for _, z2 := range zips {
 		d := Distance(z1.Latitude, z1.Longitude, z2.Latitude, z2.Longitude)
 		if d <= radius {
