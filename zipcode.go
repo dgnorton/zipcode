@@ -2,7 +2,6 @@ package zipcode
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -11,59 +10,16 @@ import (
 )
 
 type Zip struct {
-	Code      int
-	Latitude  float64
-	Longitude float64
-	City      string
-	State     string
-	County    string
-	Type      string
-	Distance  float64
-        LatitudeSin float64
-        LatitudeCos float64
-}
-
-// ParseCSV parses a string in the form of...
-// "zip code","longitude","latitude","city","state","county","type"
-func ParseCSV(csv string) (*Zip, error) {
-	strs := strings.Split(csv, ",")
-	if len(strs) != 7 {
-		return nil, errors.New("wrong number of fields")
-	}
-
-	zip := new(Zip)
-
-	var err error
-	tmp := strings.Replace(strs[0], `"`, "", -1)
-	zip.Code, err = strconv.Atoi(tmp)
-	if err != nil {
-		return nil, err
-	}
-
-	tmp = strings.Replace(strs[1], `"`, "", -1)
-	if tmp != "" {
-		zip.Latitude, err = strconv.ParseFloat(tmp, 64)
-		if err != nil {
-			fmt.Println(*zip)
-			return nil, err
-		}
-	}
-
-	tmp = strings.Replace(strs[2], `"`, "", -1)
-	if tmp != "" {
-		zip.Longitude, err = strconv.ParseFloat(tmp, 64)
-		if err != nil {
-			fmt.Println(*zip)
-			return nil, err
-		}
-	}
-
-	zip.City = strings.Replace(strs[3], `"`, "", -1)
-	zip.State = strings.Replace(strs[4], `"`, "", -1)
-	zip.County = strings.Replace(strs[5], `"`, "", -1)
-	zip.Type = strings.Replace(strs[6], `"`, "", -1)
-
-	return zip, nil
+	Code        string
+	Latitude    float64
+	Longitude   float64
+	City        string
+	State       string
+	County      string
+	Type        string
+	Distance    float64
+	LatitudeSin float64
+	LatitudeCos float64
 }
 
 // ParseTSV parses a tab-separated-value string in the format
@@ -78,16 +34,12 @@ func ParseTSV(tsv string) (*Zip, error) {
 
 	zip := &Zip{}
 
-	var err error
-	zip.Code, err = strconv.Atoi(strs[1])
-	if err != nil {
-		return nil, err
-	}
-
+	zip.Code = strs[1]
 	zip.City = strs[2]
 	zip.State = strs[4]
 	zip.County = strs[5]
 
+	var err error
 	zip.Latitude, err = strconv.ParseFloat(strs[9], 64)
 	if err != nil {
 		return nil, err
@@ -101,12 +53,6 @@ func ParseTSV(tsv string) (*Zip, error) {
 	return zip, nil
 }
 
-// LoadCSVFile loads a CSV file in the form of...
-// "zip code","longitude","latitude","city","state","county","type"
-func LoadCSVFile(fileName string) ([]*Zip, error) {
-	return loadFile(fileName, ParseCSV)
-}
-
 // LoadTSVFile loads a tab-separated-value file in the
 // format provided by geonames.org
 func LoadTSVFile(fileName string) ([]*Zip, error) {
@@ -115,22 +61,22 @@ func LoadTSVFile(fileName string) ([]*Zip, error) {
 
 // Distance calculates the distance between two zip codes.
 func Distance(z1, z2 *Zip) float64 {
-   if z1.Code == z2.Code {
-      return 0.0
-   }
+	if z1.Code == z2.Code {
+		return 0.0
+	}
 
-   theta := z1.Longitude - z2.Longitude
-   d := z1.LatitudeSin * z2.LatitudeSin + z1.LatitudeCos * z2.LatitudeCos * cos(d2r*theta)
-   d = math.Acos(d)
-   d = r2d * d
-   d = d * 60 * 1.1515
+	theta := z1.Longitude - z2.Longitude
+	d := z1.LatitudeSin*z2.LatitudeSin + z1.LatitudeCos*z2.LatitudeCos*cos(d2r*theta)
+	d = math.Acos(d)
+	d = r2d * d
+	d = d * 60 * 1.1515
 
-   return d
+	return d
 }
 
 // Find takes an integer value for a zip code and returns a pointer to a Zip struct
 // or nil if not found.
-func Find(zipcode int, zips []*Zip) *Zip {
+func Find(zipcode string, zips []*Zip) *Zip {
 	for _, zip := range zips {
 		if zip.Code == zipcode {
 			return zip
@@ -141,7 +87,7 @@ func Find(zipcode int, zips []*Zip) *Zip {
 }
 
 // FindInRadius finds all zip codes within a radius (miles) of zipcode.
-func FindInRadius(zipcode int, radius float64, zips []*Zip) []*Zip {
+func FindInRadius(zipcode string, radius float64, zips []*Zip) []*Zip {
 	var found []*Zip
 	z1 := Find(zipcode, zips)
 	if z1 == nil {
@@ -156,7 +102,7 @@ func FindInRadius(zipcode int, radius float64, zips []*Zip) []*Zip {
 	}
 
 	for _, z2 := range zips {
-                d := Distance(z1, z2)
+		d := Distance(z1, z2)
 
 		if d <= radius {
 			z2.Distance = d
@@ -188,9 +134,9 @@ func loadFile(fileName string, parse parser) ([]*Zip, error) {
 		if err != nil {
 			return nil, err
 		}
-                // pre-calculate a couple values for faster distance calculataions
-                zip.LatitudeSin = sin(d2r * zip.Latitude)
-                zip.LatitudeCos = cos(d2r * zip.Latitude)
+		// pre-calculate a couple values for faster distance calculataions
+		zip.LatitudeSin = sin(d2r * zip.Latitude)
+		zip.LatitudeCos = cos(d2r * zip.Latitude)
 
 		zips = append(zips, zip)
 	}
