@@ -74,8 +74,8 @@ func Distance(z1, z2 *Zip) float64 {
 	return d
 }
 
-// Find takes an integer value for a zip code and returns a pointer to a Zip struct
-// or nil if not found.
+// Find takes a zip code string and returns a pointer to a Zip struct or nil
+// if not found in the list.
 func Find(zipcode string, zips []*Zip) *Zip {
 	for _, zip := range zips {
 		if zip.Code == zipcode {
